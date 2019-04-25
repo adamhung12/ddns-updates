@@ -1,50 +1,88 @@
 # setup email module
-import smtplib, ssl
-def sendMessage(msg):
- mail_sender = "a@a.com"
- mail_receiver = "a@a.com"
- mail_password = ""
- sender_email = mail_sender
- receiver_email = mail_receiver
- msg['From'] = sender_email
- msg['To'] = receiver_email
- password = mail_password
- port = 465 # For SSL
- smtp_server = "smtp.zoho.com"
- context = ssl.create_default_context()
- server = smtplib.SMTP_SSL(smtp_server, port,context)
- server.login(sender_email, password)
- server.sendmail(sender_email, receiver_email, msg.as_string())
- server.quit()
- 
 
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import requests
-import json
+class MailSender:
+    def __init__(self, smtp_server, username, password,port):
+        self.smtp_server = smtp_server
+        self.username = username
+        self.password = password   
+        self.port = port
+    
+    def sendMessage(self, sender, receiver, msg):
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        import smtplib, ssl
+        msg['From'] = sender
+        msg['To'] = receiver
+        context = ssl.create_default_context()
+        server = smtplib.SMTP_SSL(self.smtp_server, self.port,context)
+        server.login(self.username, self.password)
+        print(msg.as_string())
+        server.sendmail(sender, receiver, msg.as_string())
+        server.quit()
 
-try:
- host=""
- domain = ""
- password = ""
- 
- r = requests.get("https://api.myip.com/")
- jsonData=json.loads(r.content)
- ip = jsonData["ip"]
-  
- url = "https://dynamicdns.park-your-domain.com/update?host={}&domain={}&password={}&ip={}".format(host,domain,password,ip)
- r = requests.get(url)
- 
- msg = MIMEMultipart('alternative')
- part1 = MIMEText("Updated the DDNS of <b>[{}.{}]</br> to <b>{}</b>".format(host, domain,ip), 'html')
- msg.attach(part1)
- msg['Subject'] = "Updated DDNS[Success]"
- sendMessage(msg) 
- 
-except:
- msg = MIMEMultipart('alternative')
- part1 = MIMEText("Error while updating DDNS of <b>[{}.{}]</b>".format(host, domain), 'html')
- msg.attach(part1)
- msg['Subject'] = "Updated DDNS[Fail]"
- sendMessage(msg) 
- 
+
+def getIp():
+    import requests
+    import json
+    r = requests.get("https://api.myip.com/")
+    jsonData=json.loads(r.content)
+    ip = jsonData["ip"]
+    return ip;
+
+
+def dns(domain):
+    import socket
+    return socket.gethostbyname(domain)
+
+    
+def updateDdns(host, domain,ddnsPassword, mailSender,sender,receiver, update=False):
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    import requests
+    print("start")
+    try:        
+        ip = getIp()     
+        print("Found ip: "+ip)
+        print("Find domain ip of domain "+host+"."+domain)
+        domainIp = dns(host+"."+domain)
+        print("Found domain  ip: "+domainIp)
+        if ip==domainIp:
+            print("IP not changed")
+            msg = MIMEMultipart('alternative')
+            part1 = MIMEText("Updated the DDNS of <b>[{}.{}]</br> to <b>{}</b>".format(host, domain,ip), 'html')
+            msg.attach(part1)
+            msg['Subject'] = "Updated DDNS[Success]"
+            print("messge: "+msg.as_string())
+            mailSender.sendMessage(sender, receiver, msg) 
+        elif update:
+            print("IP updated")
+            url = "https://dynamicdns.park-your-domain.com/update?host={}&domain={}&password={}&ip={}".format(host,domain,ddnsPassword,ip)
+            r = requests.get(url)
+            msg = MIMEMultipart('alternative')
+            part1 = MIMEText("Updated the DDNS of <b>[{}.{}]</br> to <b>{}</b>".format(host, domain,ip), 'html')
+            msg.attach(part1)
+            msg['Subject'] = "Updated DDNS[Success]"
+            mailSender.sendMessage(sender, receiver, msg) 
+        else:
+            print("IP updated but no action")
+    except Exception as e:
+        msg = MIMEMultipart('alternative')
+        print(e)
+        part1 = MIMEText("Error while updating DDNS of <b>[{}.{}]</b>{}".format(host, domain, str(e)), 'html')
+        msg.attach(part1)
+        msg['Subject'] = "Updated DDNS[Fail]"
+        mailSender.sendMessage(sender, receiver, msg) 
+     
+
+#import sys
+#sys.path.append("C:/Users/xethhung/github/ddns-updates/")
+#import ddns
+
+port = 465 # For SSL
+smtp_server = "smpt server"
+username = "{smpt username}"
+password = "{smpt password}"
+
+mailSender = MailSender(smtp_server,username,password,port)
+
+updateDdns("{host}","{domain}",'{ddns password}',mailSender,"{sender email}","{receiver email}",True)
