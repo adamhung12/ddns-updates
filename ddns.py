@@ -25,7 +25,7 @@ def getIp():
     import requests
     import json
     r = requests.get("https://api.myip.com/")
-    jsonData=json.loads(r.content)
+    jsonData=json.loads(r.text)
     ip = jsonData["ip"]
     return ip;
 
