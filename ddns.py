@@ -51,7 +51,7 @@ def updateDdns(host, domain,ddnsPassword, mailSender,sender,receiver, update=Fal
             msg = MIMEMultipart('alternative')
             part1 = MIMEText("Updated the DDNS of <b>[{}.{}]</br> to <b>{}</b>".format(host, domain,ip), 'html')
             msg.attach(part1)
-            msg['Subject'] = "Updated DDNS[Success]"
+            msg['Subject'] = "Updated DDNS[{} - Unchanged]".format(host+"."+domain)
             print("messge: "+msg.as_string())
             mailSender.sendMessage(sender, receiver, msg) 
         elif update:
@@ -61,7 +61,7 @@ def updateDdns(host, domain,ddnsPassword, mailSender,sender,receiver, update=Fal
             msg = MIMEMultipart('alternative')
             part1 = MIMEText("Updated the DDNS of <b>[{}.{}]</br> to <b>{}</b>".format(host, domain,ip), 'html')
             msg.attach(part1)
-            msg['Subject'] = "Updated DDNS[Success]"
+            msg['Subject'] = "Updated DDNS[{} - Success]".format(host+"."+domain)
             mailSender.sendMessage(sender, receiver, msg) 
         else:
             print("IP updated but no action")
@@ -70,7 +70,7 @@ def updateDdns(host, domain,ddnsPassword, mailSender,sender,receiver, update=Fal
         print(e)
         part1 = MIMEText("Error while updating DDNS of <b>[{}.{}]</b>{}".format(host, domain, str(e)), 'html')
         msg.attach(part1)
-        msg['Subject'] = "Updated DDNS[Fail]"
+        msg['Subject'] = "Updated DDNS[{} - Fail]".format(host+"."+domain)
         mailSender.sendMessage(sender, receiver, msg) 
      
 
